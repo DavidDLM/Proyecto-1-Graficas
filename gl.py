@@ -101,7 +101,21 @@ class Renderer(object):
 
     # LookAt
     def glLookAt(this, eye, camPosition=V3(0, 0, 0)):
-        return
+        forward = mt.subtractVectors(camPosition, eye)
+        forward = mt.normMatrix(forward)
+
+        right = mt.crossProductMatrix(V3(0, 1, 0), forward)
+        right = mt.normMatrix(right)
+
+        up = mt.crossProductMatrix(forward, right)
+        up = mt.normMatrix(up)
+
+        this.camMatrix = [[right[0], up[0], forward[0], camPosition[0]],
+                          [right[1], up[1], forward[1], camPosition[1]],
+                          [right[2], up[2], forward[2], camPosition[2]],
+                          [0, 0, 0, 1]]
+
+        this.viewMatrix = mt.inverseMatrix(this.camMatrix)
 
     # Projection Matrix
     def glProjectionMatrix(this, n=0.1, f=1000, fov=60):
