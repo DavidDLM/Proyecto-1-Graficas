@@ -393,7 +393,7 @@ class Renderer(object):
             flatBottomTriangle(A, B, D)
             flatTopTriangle(B, D, C)
 
-    def glTriangle_bc(self, A, B, C, verts=(), texCoords=(), normals=(), clr=None):
+    def glTriangle_bc(this, A, B, C, verts=(), texCoords=(), normals=(), clr=None):
         # bounding box
         minX = round(min(A.x, B.x, C.x))
         minY = round(min(A.y, B.y, C.y))
@@ -411,23 +411,22 @@ class Renderer(object):
 
                     z = A.z * u + B.z * v + C.z * w
 
-                    if 0 <= x < self.width and 0 <= y < self.height:
-                        if z < self.zbuffer[x][y] and -1 <= z <= 1:
-                            self.zbuffer[x][y] = z
+                    if 0 <= x < this.width and 0 <= y < this.height:
+                        if z < this.zbuffer[x][y] and -1 <= z <= 1:
+                            this.zbuffer[x][y] = z
 
-                            if self.active_shader:
-                                r, g, b = self.active_shader(self,
+                            if this.active_shader:
+                                r, g, b = this.active_shader(this,
                                                              baryCoords=(
                                                                  u, v, w),
-                                                             vColor=clr or self.currColor,
+                                                             vColor=clr or this.currColor,
                                                              texCoords=texCoords,
                                                              normals=normals,
                                                              triangleNormal=triangleNormal)
 
-                                self.glPoint(x, y, _color_(r, g, b))
+                                this.glPoint(x, y, _color_(r, g, b))
                             else:
-                                self.glPoint(x, y, clr)
-
+                                this.glPoint(x, y, clr)
     # Crea un archivo BMP
 
     def write(this, filename):
