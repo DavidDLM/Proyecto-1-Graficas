@@ -96,36 +96,29 @@ def copyMatrix(M):
     return MC
 
 
-def determinantMatrix(A, total=0):
-    # Section 1: store indices in list for row referencing
-    indices = list(range(len(A)))
-    # Section 2: when at 2x2 submatrices recursive calls end
-    if len(A) == 2 and len(A[0]) == 2:
-        val = A[0][0] * A[1][1] - A[1][0] * A[0][1]
-        return val
-    # Section 3: define submatrix for focus column and
-    #      call this function
-    for fc in indices:  # A) for each focus column, ...
-        # find the submatrix ...
-        As = copyMatrix(A)  # B) make a copy, and ...
-        As = As[1:]  # ... C) remove the first row
-        height = len(As)  # D)
-        for i in range(height):
-            # E) for each remaining row of submatrix ...
-            #     remove the focus column elements
-            As[i] = As[i][0:fc] + As[i][fc+1:]
-        sign = (-1) ** (fc % 2)  # F)
-        # G) pass submatrix recursively
-        sub_det = determinantMatrix(As)
-        # H) total all returns from recursion
-        total += sign * A[0][fc] * sub_det
-    return total
+def determinantMatrix(m):
+    # base case for 2x2 matrix
+    if len(m) == 2:
+        return m[0][0]*m[1][1]-m[0][1]*m[1][0]
+
+    determinant = 0
+    for c in range(len(m)):
+        determinant += ((-1)**c)*m[0][c] * \
+            determinantMatrix(getMatrixMinor(m, 0, c))
+    return determinant
 
 
 # Substract
 def subtractVectors(v1, v2):
     result = [i-j for i, j in zip(v1, v2)]
     return result
+
+
+# Eliminate
+def eliminateMatrix(r1, r2, col, target=0):
+    fac = (r2[col]-target) / r1[col]
+    for i in range(len(r2)):
+        r2[i] -= fac * r1[i]
 
 
 # Norm fuction
@@ -150,27 +143,32 @@ def magnitudeMatrix(m):
 
 # Matrix inversion dos funciones
 # https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy
-def getMatrixMinor(m, i, j):
-    return [row[:j] + row[j+1:] for row in (m[:i]+m[i+1:])]
+def getMatrixMinor(a):
+    for i in range(len(a)):
+        if a[i][i] == 0:
+            for j in range(i+1, len(a)):
+                if a[i][j] != 0:
+                    a[i], a[j] = a[j], a[i]
+                    break
+            else:
+                raise ValueError("Matrix is not invertible")
+        for j in range(i+1, len(a)):
+            eliminateMatrix(a[i], a[j], i)
+    for i in range(len(a)-1, -1, -1):
+        for j in range(i-1, -1, -1):
+            eliminateMatrix(a[i], a[j], i)
+    for i in range(len(a)):
+        eliminateMatrix(a[i], a[i], i, target=1)
+    return a
 
 
-def inverseMatrix(m):
-    determinant = determinantMatrix(m)
-    # special case for 2x2 matrix:
-    if len(m) == 2:
-        return [[m[1][1]/determinant, -1*m[0][1]/determinant],
-                [-1*m[1][0]/determinant, m[0][0]/determinant]]
-
-    # find matrix of cofactors
-    cofactors = []
-    for r in range(len(m)):
-        cofactorRow = []
-        for c in range(len(m)):
-            minor = getMatrixMinor(m, r, c)
-            cofactorRow.append(((-1)**(r+c)) * determinantMatrix(minor))
-        cofactors.append(cofactorRow)
-    cofactors = transposeMatrix(cofactors)
-    for r in range(len(cofactors)):
-        for c in range(len(cofactors)):
-            cofactors[r][c] = cofactors[r][c]/determinant
-    return cofactors
+def inverseMatrix(a):
+    tmp = [[] for _ in a]
+    for i, row in enumerate(a):
+        assert len(row) == len(a)
+        tmp[i].extend(row + [0]*i + [1] + [0]*(len(a)-i-1))
+    getMatrixMinor(tmp)
+    ret = []
+    for i in range(len(tmp)):
+        ret.append(tmp[i][len(tmp[i])//2:])
+    return ret
