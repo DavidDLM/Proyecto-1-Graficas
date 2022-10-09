@@ -3,27 +3,28 @@
 # Graficos por computadora basado en lo escrito por Ing. Carlos Alonso
 
 class Obj(object):
-    def __init__(init, filename):
+    def __init__(this, filename):
         with open(filename, "r") as file:
-            init.lines = file.read().splitlines()
+            this.lines = file.read().splitlines()
 
-        init.vertices = []
-        init.texcoords = []
-        init.normals = []
-        init.faces = []
+        this.vertices = []
+        this.texcoords = []
+        this.normals = []
+        this.faces = []
 
-        for line in init.lines:
+        for line in this.lines:
             try:
                 prefix, value = line.split(' ', 1)
             except:
                 continue
 
             if prefix == 'v':  # Vertices
-                init.vertices.append(list(map(float, value.split(' '))))
+                this.vertices.append(list(map(float, value.split(' '))))
             elif prefix == 'vt':
-                init.texcoords.append(list(map(float, value.split(' '))))
+                this.texcoords.append(list(map(float, value.split(' '))))
             elif prefix == 'vn':
-                init.normals.append(list(map(float, value.split(' '))))
+                this.normals.append(list(map(float, value.split(' '))))
             elif prefix == 'f':
-                init.faces.append([list(map(int, vert.split('/')))
+                this.faces.append([list(map(int, vert.split('/')))
                                   for vert in value.split(' ')])
+
