@@ -21,10 +21,11 @@ def multMatrix(v, G):
               [0, 0, 0, 0],
               [0, 0, 0, 0],
               [0, 0, 0, 0]]
-    for i in range(len(G[0])):  # this loops through columns of the matrix
+    for i in range(len(v)):  # this loops through columns of the matrix
         total = 0
-        for j in range(len(v)):  # this loops through vector coordinates & rows of matrix
-            for k in range(len(v)):
+        # this loops through vector coordinates & rows of matrix
+        for j in range(len((G[0]))):
+            for k in range(len(G)):
                 result[i][j] += v[i][k] * G[k][j]
     return result
 
