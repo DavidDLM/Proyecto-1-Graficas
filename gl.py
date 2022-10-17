@@ -119,7 +119,7 @@ class Renderer(object):
 
     # Projection Matrix
     def glProjectionMatrix(this, n=0.1, f=1000, fov=60):
-        aspectRatio = this.width / this.height
+        aspectRatio = this.viewportWidth / this.viewportHeight
         t = tan((fov * pi / 180) / 2) * n
         r = t * aspectRatio
 
@@ -130,8 +130,10 @@ class Renderer(object):
 
     # Limpia los pixeles de la pantalla poniendolos en blanco o negro
     def glClear(this):
-        this.framebuffer = [[this.clearColor for y in range(
-            this.height)]for x in range(this.width)]
+        this.framebuffer = [[this.clearColor for y in range(this.height)]
+                            for x in range(this.width)]
+        this.buffer = [[float('inf') for y in range(this.height)]
+                       for x in range(this.width)]
 
     # Limpia el fondo
     def glClearBackground(this):
@@ -231,15 +233,15 @@ class Renderer(object):
 
                 limit += 1
 
-    def glCreateRotationMatrix(this, rotate=V3(0, 0, 0)):
+    def glCreateRotationMatrix(this, pitch=0, yaw=0, roll=0):
 
         # https://howthingsfly.si.edu/flight-dynamics/roll-pitch-and-yaw
         # Rotation around the front-to-back axis is called roll.
         # Rotation around the side-to-side axis is called pitch.
         # Rotation around the vertical axis is called yaw.
-        pitch = conv.degrees_to_radians(rotate.x)
-        yaw = conv.degrees_to_radians(rotate.y)
-        roll = conv.degrees_to_radians(rotate.z)
+        pitch *= pi/180
+        yaw *= pi/180
+        roll *= pi/180
 
         # Matrices de rotacion proporcionadas por Ing. Dennis Aldana
         rotationX = [[1, 0, 0, 0],
@@ -266,7 +268,8 @@ class Renderer(object):
                            [0, 0, 1, translate.z],
                            [0, 0, 0, 1]]
 
-        rotationMatrix = this.glCreateRotationMatrix(rotate)
+        rotationMatrix = this.glCreateRotationMatrix(
+            rotate.x, rotate.y, rotate.z)
 
         scaleMatrix = [[scale.x, 0, 0, 0],
                        [0, scale.y, 0, 0],
@@ -288,7 +291,7 @@ class Renderer(object):
 
     def glDirTransform(this, dirVector, rotMatrix):
         v = V4(dirVector[0], dirVector[1], dirVector[2], 0)
-        vt = mt.multMatrix(rotMatrix, v)
+        vt = mt.vectMultMatrix(rotMatrix, v)
         vf = V3(vt[0],
                 vt[1],
                 vt[2])
@@ -298,9 +301,8 @@ class Renderer(object):
     def glCamTransform(this, vertex):
         v = V4(vertex[0], vertex[1], vertex[2], 1)
 
-        vt = mt.multMatrix(this.viewportMatrix, mt.multMatrix(
-            this.projectionMatrix, mt.multMatrix(this.viewMatrix, v)))
-
+        vt = mt.vectMultMatrix(this.viewportMatrix, mt.vectMultMatrix(
+            this.projectionMatrix, mt.vectMultMatrix(this.viewMatrix, v)))
         vf = V3(vt[0] / vt[3],
                 vt[1] / vt[3],
                 vt[2] / vt[3])
@@ -407,7 +409,7 @@ class Renderer(object):
             flatBottomTriangle(A, B, D)
             flatTopTriangle(B, D, C)
 
-    def glTriangle_bc(this, A, B, C, verts=(), texCoords=(), normals=(), clr=None):
+    def glTriangle_bc(this, A, B, C, verts=(), texCoords=(), normals=(), color=None):
         # bounding box
         minX = round(min(A.x, B.x, C.x))
         minY = round(min(A.y, B.y, C.y))
@@ -415,7 +417,9 @@ class Renderer(object):
         maxY = round(max(A.y, B.y, C.y))
 
         triangleNormal = mt.crossProductMatrix(mt.subtractVectors([verts[1].x, verts[1].y, verts[1].z], [
-            verts[0].x, verts[0].y, verts[0].z]), mt.subtractVectors([verts[2].x, verts[2].y, verts[2].z], [verts[0].x, verts[0].y, verts[0].z]))
+                                               verts[0].x, verts[0].y, verts[0].z]), mt.subtractVectors([verts[2].x, verts[2].y, verts[2].z], [verts[0].x, verts[0].y, verts[0].z]))
+        # normalizar
+        # triangleNormal[:] = [x / ml.norm(triangleNormal) for x in triangleNormal]
 
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
@@ -426,21 +430,22 @@ class Renderer(object):
                     z = A.z * u + B.z * v + C.z * w
 
                     if 0 <= x < this.width and 0 <= y < this.height:
-                        if z < this.zbuffer[x][y] and -1 <= z <= 1:
-                            this.zbuffer[x][y] = z
+                        if z < this.buffer[x][y] and -1 <= z <= 1:
+                            this.buffer[x][y] = z
 
                             if this.active_shader:
                                 r, g, b = this.active_shader(this,
                                                              baryCoords=(
                                                                  u, v, w),
-                                                             vColor=clr or this.currColor,
+                                                             vColor=color or this.currColor,
                                                              texCoords=texCoords,
                                                              normals=normals,
                                                              triangleNormal=triangleNormal)
 
                                 this.glPoint(x, y, _color_(r, g, b))
                             else:
-                                this.glPoint(x, y, clr)
+                                this.glPoint(x, y, color)
+
     # Crea un archivo BMP
 
     def write(this, filename):
