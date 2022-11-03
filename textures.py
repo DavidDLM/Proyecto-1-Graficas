@@ -1,5 +1,5 @@
 # Mario de Leon 19019
-# Graficos por computadora basado en lo escrito por Ing. Carlos Alonso
+# Graficos por computadora basado en lo escrito por Ing. Carlos Alonso / Ing. Dennis Aldana
 import struct
 
 
